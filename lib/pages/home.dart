@@ -186,8 +186,9 @@ class _HomePageState extends State<HomePage> {
                 ? IconButton(
                     iconSize: 32,
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                    onPressed: () {
-                      debugPrint("Deletar lista $id");
+                    onPressed: () async {
+                      await DBHelper.instance.deleteList(id);
+                      _refreshLists();   // Atualiza a tela após deletar
                     },
                   )
                 : Icon(
@@ -201,3 +202,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
