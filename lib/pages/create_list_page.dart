@@ -51,14 +51,14 @@ class _CreateListPageState extends State<CreateListPage> {
       setState(() {
         _showSuccess = true; //mensagem de sucesso com ícone de confete
       });
-      /*
+
       // Aguarda 2.0 segundos para o usuário ver a mensagem antes de fechar
       Future.delayed(const Duration(milliseconds: 2000), () {
         if (mounted) {
           // Volta para a tela anterior após salvar a lista no banco de dados
           Navigator.pop(context, true);
         }
-      });*/
+      });
     }
   }
 
