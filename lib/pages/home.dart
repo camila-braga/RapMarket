@@ -41,6 +41,31 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  /// ✅ Confirmação de exclusão de lista
+  void _confirmDeleteList(int listId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Excluir lista"),
+        content: const Text("Tem certeza que deseja excluir esta lista?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await DBHelper.instance.deleteList(listId);
+              Navigator.pop(context);
+              _refreshLists();
+            },
+            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -56,6 +81,8 @@ class _HomePageState extends State<HomePage> {
                     ? _buildEmptyState()
                     : _buildListState(colorScheme),
           ),
+
+          // Botão cadastrar lista
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             child: SizedBox(
@@ -158,14 +185,13 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             subtitle: const Text("Toque para ver itens"),
+
+            // 🔥 Aqui está a mudança! Agora pergunta antes de excluir
             trailing: isSelected
                 ? IconButton(
                     iconSize: 32,
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                    onPressed: () async {
-                      await DBHelper.instance.deleteList(id);
-                      _refreshLists();
-                    },
+                    onPressed: () => _confirmDeleteList(id),
                   )
                 : Icon(Icons.arrow_forward_ios, size: 20, color: colorScheme.primary),
           ),

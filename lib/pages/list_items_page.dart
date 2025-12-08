@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import 'create_item_page.dart';
+import '../widgets/rap_market_page.dart';
 
 class ListItemsPage extends StatefulWidget {
   final int listId;
@@ -64,8 +65,8 @@ class _ListItemsPageState extends State<ListItemsPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.listTitle)),
+    return RapMarketPage(
+      title: widget.listTitle,
       body: Column(
         children: [
           Expanded(
@@ -78,15 +79,16 @@ class _ListItemsPageState extends State<ListItemsPage> {
                         itemCount: items.length,
                         itemBuilder: (_, index) {
                           final item = items[index];
+
                           return Card(
                             child: ListTile(
                               title: Text(item['name']),
                               subtitle: Text(
-                                  "Preço: R\$ ${item['price'].toStringAsFixed(2)} — Categoria: ${item['category']}"),
+                                "Preço: R\$ ${item['price'].toStringAsFixed(2)} — Categoria: ${item['category']}",
+                              ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // ✅ Checkbox de comprado
                                   Checkbox(
                                     value: item['is_bought'] == 1,
                                     onChanged: (value) async {
@@ -97,7 +99,6 @@ class _ListItemsPageState extends State<ListItemsPage> {
                                       _refreshItems();
                                     },
                                   ),
-                                  // ✅ Botão de lixeira
                                   IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.red),
                                     onPressed: () => _confirmDeleteItem(item['id']),
@@ -129,7 +130,7 @@ class _ListItemsPageState extends State<ListItemsPage> {
             ),
           ),
 
-          // Botão de cadastrar item
+          // Botão cadastrar item
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             child: SizedBox(
@@ -147,7 +148,8 @@ class _ListItemsPageState extends State<ListItemsPage> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => CreateItemPage(listId: widget.listId)),
+                      builder: (_) => CreateItemPage(listId: widget.listId),
+                    ),
                   );
                   if (result == true) _refreshItems();
                 },

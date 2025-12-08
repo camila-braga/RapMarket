@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/rap_market_page.dart';
 import '../database/database.dart';
 
 class CreateItemPage extends StatefulWidget {
@@ -21,10 +22,8 @@ class _CreateItemPageState extends State<CreateItemPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Cadastrar item"),
-      ),
+    return RapMarketPage(
+      title: "Cadastrar item",
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Form(
