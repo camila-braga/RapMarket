@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DBHelper {
-  // Padrão Singleton
   static final DBHelper instance = DBHelper._init();
   static Database? _database;
 
@@ -22,13 +21,11 @@ class DBHelper {
   }
 
   Future _createDB(Database db, int version) async {
-    // Tipos de dados
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const realType = 'REAL NOT NULL';
     const integerType = 'INTEGER NOT NULL';
 
-    // Tabela de LISTAS
     await db.execute('''
       CREATE TABLE lists ( 
         id $idType, 
@@ -37,7 +34,6 @@ class DBHelper {
       )
     ''');
 
-    // Tabela de ITENS
     await db.execute('''
       CREATE TABLE items ( 
         id $idType, 
@@ -50,9 +46,9 @@ class DBHelper {
     ''');
   }
 
-  // ---------------------------------------------------
-  // MÉTODOS PARA AS LISTAS (CRUD)
-  // ---------------------------------------------------
+  // ------------------------------
+  // CRUD LISTAS
+  // ------------------------------
 
   Future<int> createList(String title) async {
     final db = await instance.database;
@@ -70,16 +66,16 @@ class DBHelper {
 
   Future<int> deleteList(int id) async {
     final db = await instance.database;
+
     await db.delete('items', where: 'list_id = ?', whereArgs: [id]);
     return await db.delete('lists', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<int> addItem(
-    int listId,
-    String name,
-    double price,
-    String category,
-  ) async {
+  // ------------------------------
+  // CRUD ITENS
+  // ------------------------------
+
+  Future<int> addItem(int listId, String name, double price, String category) async {
     final db = await instance.database;
     final data = {
       'list_id': listId,
@@ -91,7 +87,7 @@ class DBHelper {
     return await db.insert('items', data);
   }
 
-  Future<List<Map<String, dynamic>>> getItemsByList(int listId) async {
+  Future<List<Map<String, dynamic>>> getItems(int listId) async {
     final db = await instance.database;
     return await db.query('items', where: 'list_id = ?', whereArgs: [listId]);
   }
@@ -104,5 +100,10 @@ class DBHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> deleteItem(int id) async {
+    final db = await instance.database;
+    return await db.delete('items', where: 'id = ?', whereArgs: [id]);
   }
 }

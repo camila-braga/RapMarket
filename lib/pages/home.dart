@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/rap_market_page.dart';
 import '../database/database.dart';
 import 'create_list_page.dart';
+import 'list_items_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,16 +14,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> myLists = [];
   bool _isLoading = true;
-
-  int? _selectedListId; //apenas 1 item pode ser selecionado por vez
+  int? _selectedListId;
 
   @override
   void initState() {
     super.initState();
-    _refreshLists(); // Carrega as listas ao iniciar o app
+    _refreshLists();
   }
 
-  // Busca os dados no SQLite
   void _refreshLists() async {
     final data = await DBHelper.instance.getAllLists();
     setState(() {
@@ -35,9 +34,9 @@ class _HomePageState extends State<HomePage> {
   void _toggleSelection(int id) {
     setState(() {
       if (_selectedListId == id) {
-        _selectedListId = null; // Desmarca se clicar no mesmo
+        _selectedListId = null;
       } else {
-        _selectedListId = id; // Marca o novo, desmarcando o anterior
+        _selectedListId = id;
       }
     });
   }
@@ -50,43 +49,31 @@ class _HomePageState extends State<HomePage> {
       title: 'RapMarket',
       body: Column(
         children: [
-          // Área principal
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  ) // ícone animado de Loading
+                ? const Center(child: CircularProgressIndicator())
                 : myLists.isEmpty
-                ? _buildEmptyState()
-                : _buildListState(colorScheme),
+                    ? _buildEmptyState()
+                    : _buildListState(colorScheme),
           ),
-
-          // Botão de cadastrar lista
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 32.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             child: SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
                 onPressed: () async {
-                  // Navega para a página de criação
                   final result = await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateListPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const CreateListPage()),
                   );
-
-                  // Se a lista foi craida, atualizamos a página
-                  if (result == true) {
-                    _refreshLists();
-                  }
+                  if (result == true) _refreshLists();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.tertiary,
                   foregroundColor: colorScheme.secondary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: const Text(
@@ -101,12 +88,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Widget para quando NÃO há listas
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           SizedBox(height: 20),
           Text(
             "Bem-vindo ao RapMarket",
@@ -115,27 +101,22 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 10),
           Text(
             "Suas listas aparecerão aqui.",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+            style: TextStyle(fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  // Widget para quando HÁ listas
   Widget _buildListState(ColorScheme colorScheme) {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 20.0),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
       itemCount: myLists.length,
       itemBuilder: (context, index) {
-        // Pega a lista do banco de dados
         final listData = myLists[index];
         final int id = listData['id'];
-
-        // Verifica se este item específico está selecionado
         final bool isSelected = _selectedListId == id;
 
-        // Cards das listas
         return Card(
           elevation: 2,
           color: isSelected ? colorScheme.tertiary : null,
@@ -147,32 +128,27 @@ class _HomePageState extends State<HomePage> {
                 : BorderSide.none,
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-
-            // Lógica de clique longo para iniciar seleção
-            onLongPress: () {
-              _toggleSelection(id);
-            },
-
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            onLongPress: () => _toggleSelection(id),
             onTap: () {
-              // Se tiver algum selecionado, o clique muda a seleção para este
               if (_selectedListId != null) {
                 _toggleSelection(id);
               } else {
-                debugPrint(
-                  "ID da Lista clicada: $id",
-                ); //fazer o sistema de log depois
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ListItemsPage(
+                      listId: id,
+                      listTitle: listData['title'],
+                    ),
+                  ),
+                );
               }
             },
-
             leading: CircleAvatar(
               backgroundColor: colorScheme.primary,
               child: Icon(Icons.shopping_cart, color: colorScheme.surface),
             ),
-            // Exibe o título vindo do banco
             title: Text(
               listData['title'],
               style: TextStyle(
@@ -188,18 +164,13 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     onPressed: () async {
                       await DBHelper.instance.deleteList(id);
-                      _refreshLists();   // Atualiza a tela após deletar
+                      _refreshLists();
                     },
                   )
-                : Icon(
-                    Icons.arrow_forward_ios,
-                    size: 20,
-                    color: colorScheme.primary,
-                  ),
+                : Icon(Icons.arrow_forward_ios, size: 20, color: colorScheme.primary),
           ),
         );
       },
     );
   }
 }
-
