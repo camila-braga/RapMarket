@@ -59,6 +59,16 @@ class DBHelper {
     return await db.insert('lists', data);
   }
 
+  Future<int> updateList(int id, String newTitle) async {
+    final db = await instance.database;
+    return await db.update(
+      'lists',
+      {'title': newTitle},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getAllLists() async {
     final db = await instance.database;
     return await db.query('lists', orderBy: 'created_at DESC');
@@ -75,7 +85,12 @@ class DBHelper {
   // CRUD ITENS
   // ------------------------------
 
-  Future<int> addItem(int listId, String name, double price, String category) async {
+  Future<int> addItem(
+    int listId,
+    String name,
+    double price,
+    String category,
+  ) async {
     final db = await instance.database;
     final data = {
       'list_id': listId,
@@ -85,6 +100,21 @@ class DBHelper {
       'is_bought': 0,
     };
     return await db.insert('items', data);
+  }
+
+  Future<int> updateItem(
+    int id,
+    String name,
+    double price,
+    String category,
+  ) async {
+    final db = await instance.database;
+    return await db.update(
+      'items',
+      {'name': name, 'price': price, 'category': category},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<List<Map<String, dynamic>>> getItems(int listId) async {

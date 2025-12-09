@@ -78,8 +78,8 @@ class _HomePageState extends State<HomePage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : myLists.isEmpty
-                    ? _buildEmptyState()
-                    : _buildListState(colorScheme),
+                ? _buildEmptyState()
+                : _buildListState(colorScheme),
           ),
 
           // Botão cadastrar lista
@@ -92,7 +92,9 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CreateListPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const CreateListPage(),
+                    ),
                   );
                   if (result == true) _refreshLists();
                 },
@@ -126,10 +128,7 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10),
-          Text(
-            "Suas listas aparecerão aqui.",
-            style: TextStyle(fontSize: 16),
-          ),
+          Text("Suas listas aparecerão aqui.", style: TextStyle(fontSize: 16)),
         ],
       ),
     );
@@ -155,21 +154,23 @@ class _HomePageState extends State<HomePage> {
                 : BorderSide.none,
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             onLongPress: () => _toggleSelection(id),
-            onTap: () {
+            onTap: () async {
               if (_selectedListId != null) {
                 _toggleSelection(id);
               } else {
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ListItemsPage(
-                      listId: id,
-                      listTitle: listData['title'],
-                    ),
+                    builder: (_) =>
+                        ListItemsPage(listId: id, listTitle: listData['title']),
                   ),
                 );
+                _refreshLists();
               }
             },
             leading: CircleAvatar(
@@ -193,7 +194,11 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     onPressed: () => _confirmDeleteList(id),
                   )
-                : Icon(Icons.arrow_forward_ios, size: 20, color: colorScheme.primary),
+                : Icon(
+                    Icons.arrow_forward_ios,
+                    size: 20,
+                    color: colorScheme.primary,
+                  ),
           ),
         );
       },
