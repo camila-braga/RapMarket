@@ -150,11 +150,14 @@ class _ListItemsPageState extends State<ListItemsPage> {
 
   void _editItem(Map<String, dynamic> item) {
     final nameController = TextEditingController(text: item['name']);
-    // Converte o preço para string para mostrar na caixa
+    // Se preço for 0, mostra vazio na edição, senão mostra o valor
     final priceController = TextEditingController(
-      text: item['price'].toString(),
+      text: item['price'] == 0 ? "" : item['price'].toString(),
     );
     final categoryController = TextEditingController(text: item['category']);
+    final quantityController = TextEditingController(
+      text: item['quantity'].toString(),
+    );
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -189,13 +192,31 @@ class _ListItemsPageState extends State<ListItemsPage> {
                   _buildEditTextField(nameController, "Novo nome", colorScheme),
                   const SizedBox(height: 12),
 
-                  // 2. Campo Preço
-                  _buildEditTextField(
-                    priceController,
-                    "Novo preço",
-                    colorScheme,
-                    isNumber: true,
+                  // Linha com Preço e Qtd
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildEditTextField(
+                          priceController,
+                          "Preço",
+                          colorScheme,
+                          isNumber: true,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 1,
+                        child: _buildEditTextField(
+                          quantityController,
+                          "Qtd",
+                          colorScheme,
+                          isNumber: true,
+                        ),
+                      ),
+                    ],
                   ),
+
                   const SizedBox(height: 12),
 
                   // 3. Campo Categoria
@@ -215,16 +236,26 @@ class _ListItemsPageState extends State<ListItemsPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (nameController.text.isNotEmpty &&
-                              priceController.text.isNotEmpty &&
-                              categoryController.text.isNotEmpty) {
+                              categoryController.text.isNotEmpty &&
+                              quantityController.text.isNotEmpty) {
+                            double finalPrice = 0.0;
+                            if (priceController.text.isNotEmpty) {
+                              finalPrice =
+                                  double.tryParse(
+                                    priceController.text.replaceAll(',', '.'),
+                                  ) ??
+                                  0.0;
+                            }
+
+                            int finalQty =
+                                int.tryParse(quantityController.text) ?? 1;
+
                             await DBHelper.instance.updateItem(
                               item['id'],
                               nameController.text,
-                              double.tryParse(
-                                    priceController.text.replaceAll(',', '.'),
-                                  ) ??
-                                  0.0,
+                              finalPrice,
                               categoryController.text,
+                              finalQty,
                             );
 
                             Navigator.pop(context);
@@ -279,9 +310,11 @@ class _ListItemsPageState extends State<ListItemsPage> {
   }
 
   double get totalComprado {
-    return items
-        .where((item) => item['is_bought'] == 1)
-        .fold(0.0, (sum, item) => sum + item['price']);
+    return items.where((item) => item['is_bought'] == 1).fold(0.0, (sum, item) {
+      double price = item['price'] ?? 0.0;
+      int qty = item['quantity'] ?? 1;
+      return sum + (price * qty);
+    });
   }
 
   void _confirmDeleteItem(int itemId) {
@@ -371,77 +404,94 @@ class _ListItemsPageState extends State<ListItemsPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : items.isEmpty
                 ? const Center(child: Text("Nenhum item cadastrado."))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (_, index) {
-                      final item = items[index];
+                : SlidableAutoCloseBehavior(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      itemCount: items.length,
+                      itemBuilder: (_, index) {
+                        final item = items[index];
 
-                      return Slidable(
-                        key: Key(item['id'].toString()),
+                        // --- LÓGICA DE EXIBIÇÃO NO CARD ---
+                        double price = item['price'] ?? 0.0;
+                        int quantity = item['quantity'] ?? 1;
+                        String category = item['category'] ?? '';
 
-                        endActionPane: ActionPane(
-                          motion: const ScrollMotion(),
-                          extentRatio: 0.25,
+                        String priceDisplay = price == 0
+                            ? "-"
+                            : "R\$ ${price.toStringAsFixed(2)}";
 
-                          children: [
-                            SlidableAction(
-                              onPressed: (context) =>
-                                  _confirmDeleteItem(item['id']),
-                              backgroundColor: colorScheme.error,
-                              foregroundColor: colorScheme.surface,
-                              icon: Icons.delete,
-                              label: 'Excluir',
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(12),
-                                bottomRight: Radius.circular(12),
-                              ),
-                            ),
-                          ],
-                        ),
+                        String subtitleText =
+                            "$priceDisplay \n$quantity unidades \n$category";
+                        // ----------------------------------
 
-                        child: Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            title: Text(item['name']),
-                            subtitle: Text(
-                              "Preço: R\$ ${item['price'].toStringAsFixed(2)} — Categoria: ${item['category']}",
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Slidable(
+                            key: Key(item['id'].toString()),
+                            groupTag: '0',
+
+                            endActionPane: ActionPane(
+                              motion: const ScrollMotion(),
+                              extentRatio: 0.25,
                               children: [
-                                Checkbox(
-                                  value: item['is_bought'] == 1,
-                                  onChanged: (value) async {
-                                    await DBHelper.instance.toggleItemStatus(
-                                      item['id'],
-                                      item['is_bought'] == 1,
-                                    );
-                                    _refreshItems();
-                                  },
-                                ),
-
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.edit,
-                                    color: colorScheme.primary,
+                                SlidableAction(
+                                  onPressed: (context) =>
+                                      _confirmDeleteItem(item['id']),
+                                  backgroundColor: colorScheme.error,
+                                  foregroundColor: colorScheme.surface,
+                                  icon: Icons.delete,
+                                  label: 'Excluir',
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(12),
+                                    bottomRight: Radius.circular(12),
                                   ),
-                                  onPressed: () => _editItem(item),
-                                  tooltip: "Editar item",
                                 ),
                               ],
                             ),
+
+                            child: Card(
+                              elevation: 2,
+                              // 2. Zeramos a margem do card para o Slidable colar nele
+                              margin: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                title: Text(item['name']),
+                                subtitle: Text(subtitleText),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(
+                                      value: item['is_bought'] == 1,
+                                      onChanged: (value) async {
+                                        await DBHelper.instance
+                                            .toggleItemStatus(
+                                              item['id'],
+                                              item['is_bought'] == 1,
+                                            );
+                                        _refreshItems();
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.edit,
+                                        color: colorScheme.primary,
+                                      ),
+                                      onPressed: () => _editItem(item),
+                                      tooltip: "Editar item",
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
           ),
 

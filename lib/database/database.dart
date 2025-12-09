@@ -41,7 +41,8 @@ class DBHelper {
         name $textType,
         price $realType,
         category $textType,
-        is_bought $integerType
+        is_bought $integerType,
+        quantity $integerType DEFAULT 1
       )
     ''');
   }
@@ -90,6 +91,7 @@ class DBHelper {
     String name,
     double price,
     String category,
+    int quantity,
   ) async {
     final db = await instance.database;
     final data = {
@@ -98,6 +100,7 @@ class DBHelper {
       'price': price,
       'category': category,
       'is_bought': 0,
+      'quantity': quantity,
     };
     return await db.insert('items', data);
   }
@@ -107,11 +110,17 @@ class DBHelper {
     String name,
     double price,
     String category,
+    int quantity,
   ) async {
     final db = await instance.database;
     return await db.update(
       'items',
-      {'name': name, 'price': price, 'category': category},
+      {
+        'name': name,
+        'price': price,
+        'category': category,
+        'quantity': quantity,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );

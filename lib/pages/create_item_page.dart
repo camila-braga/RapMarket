@@ -16,6 +16,9 @@ class _CreateItemPageState extends State<CreateItemPage> {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
+  final TextEditingController quantityController = TextEditingController(
+    text: "1",
+  );
   final TextEditingController categoryController = TextEditingController();
 
   @override
@@ -64,15 +67,36 @@ class _CreateItemPageState extends State<CreateItemPage> {
 
                 const SizedBox(height: 16),
 
-                // Campo Preço
-                TextFormField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Preço"),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return "Digite o preço";
-                    return null;
-                  },
+                // Campos Preço e Quantidade lado a lado
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: priceController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Preço (Opcional)",
+                          hintText: "0,00",
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Campo Quantidade
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: quantityController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(labelText: "Qtd"),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return "Qtd?";
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -104,14 +128,26 @@ class _CreateItemPageState extends State<CreateItemPage> {
                     ),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
+                        // Lógica do Preço: Se vazio, vira 0.0
+                        double finalPrice = 0.0;
+                        if (priceController.text.isNotEmpty) {
+                          finalPrice =
+                              double.tryParse(
+                                priceController.text.replaceAll(',', '.'),
+                              ) ??
+                              0.0;
+                        }
+
+                        // Lógica da Quantidade
+                        int finalQty =
+                            int.tryParse(quantityController.text) ?? 1;
+
                         await DBHelper.instance.addItem(
                           widget.listId,
                           nameController.text,
-                          double.tryParse(
-                                priceController.text.replaceAll(',', '.'),
-                              ) ??
-                              0.0,
+                          finalPrice,
                           categoryController.text,
+                          finalQty,
                         );
 
                         if (!context.mounted) return;
